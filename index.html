@@ -97,6 +97,11 @@ input,select,textarea{width:100%;padding:10px 11px;border:1px solid var(--ln);bo
 .sr:active,.sr:hover{border-color:var(--pr);background:var(--bg)}
 .sr .st{flex:1;min-width:0;display:flex;flex-direction:column}.sr .st small{color:var(--mu);font-size:12px}
 .sr .chev{font-size:22px;color:var(--pr);font-weight:800}
+.sr.dd{background:var(--bg);color:var(--mu);border-color:var(--ln)}
+.sr.dd .av{filter:grayscale(1);opacity:.85}
+.sr.dd .st b,.sr.dd .nick{color:var(--mu)}
+.sr.dd .tag{filter:grayscale(1);opacity:.85}
+.sr.dd .chev{color:var(--mu)}
 .av.sm{width:40px;height:40px;font-size:13px}
 @keyframes sin{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}
 @keyframes glw{0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,.45)}50%{box-shadow:0 0 0 7px rgba(99,102,241,0)}}
@@ -111,6 +116,7 @@ input,select,textarea{width:100%;padding:10px 11px;border:1px solid var(--ln);bo
 .sbar{flex-wrap:wrap}
 .sbar input{flex:1 1 200px}
 .sbar select{flex:1 1 160px;border-radius:16px;padding:12px 14px;background:var(--card);box-shadow:var(--sh);font-weight:700;color:var(--pr)}
+.spw{border:1px dashed var(--ln);border-radius:14px;padding:4px 8px 8px;margin-top:8px}
 .err{background:#fff1f2;color:#9f1239;border-radius:14px;padding:14px;margin:12px 0}
 </style></head>
 <body>
@@ -167,7 +173,9 @@ function gen(p){var g=0,n=0;while(p&&p.parent&&n++<60){p=byId(p.parent);g++}retu
 function kidsOf(id){return P.filter(function(p){return p.parent===id}).sort(function(a,b){return (a.ts||0)-(b.ts||0)})}
 function desc(id){var r=[id];kidsOf(id).forEach(function(k){r=r.concat(desc(k.id))});return r}
 function psrc(v){return v&&v.indexOf('data:image/jpeg;base64,')===0?v:(v?'/_blob/'+encodeURIComponent(v):'')}
-function by(p){return p.born?'<div class="by">'+esc(p.born)+'</div>':''}
+function yrs(p){var a=[];if(p.born)a.push(p.born);if(p.dead&&p.died)a.push('✝ '+p.died);return a.join(' – ')}
+function sy(s){var b=s.b?String(s.b):'',y=s.y?String(s.y):'';if(!b&&!y)return s.d?' ✝':'';return ' ('+[b,y?'✝ '+y:(s.d?'✝':'')].filter(Boolean).join(' – ')+')'}
+function by(p){var h='';if(p.born)h+='<div class="by">'+esc(p.born)+'</div>';if(p.dead&&p.died)h+='<div class="by">✝ '+esc(p.died)+'</div>';return h}
 function avh(p){return p.photo?'<img alt="" src="'+esc(psrc(p.photo))+'">':p.gender==='M'?'<span style="font-size:32px;line-height:1">👨</span>':p.gender==='F'?'<span style="font-size:32px;line-height:1">👩</span>':esc(ini(p.name))}
 function ini(n){return n.split(/\s+/).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase()}
 function snapToArr(s){return s.docs.map(function(d){var o=Object.assign({},d.data());o.id=d.id;return o})}
@@ -180,7 +188,7 @@ function render(){
  if(!db)h='<div class="err"><b>Kailangan mag-sign in sa Claude</b> para makita at mai-edit ang shared na family tree. Kung wala kang access, hilingin sa admin na i-invite ka sa Share.</div>';
  else if(!ready)h='<div class="empty">Naglo-load ng data…</div>';
  else h=tab==='dash'?dash():tab==='tree'?treeTab():tab==='off'?offs():tab==='hist'?hist():tab==='pend'?pend():setT();
- $('app').innerHTML=(db&&ready?(isAdmin?'<div class="adm"><span>👑 NAKA-ADMIN KA — agad na nase-save ang mga pagbabago</span>'+'</div>':'<div class="adm mem"><span>👤 Miyembro ka — kailangan ng approval ng admin</span><button class="btn s" style="background:#fff;color:#4338ca" data-a="lgin">⚙ Settings</button></div>'):'')+(msg?'<div class="box">'+esc(msg)+'</div>':'')+h;
+ $('app').innerHTML=(db&&ready?(isAdmin?'':''):'')+(msg?'<div class="box">'+esc(msg)+'</div>':'')+h;
  if(tab==='tree'&&db&&ready)drawTree();
  showRes();
 }
@@ -192,14 +200,14 @@ function dash(){
  return '<div class="grid">'+S.map(function(s){return '<div class="stat"><i>'+s[0]+'</i><b>'+s[1]+'</b><span>'+s[2]+'</span></div>'}).join('')+'</div><div class="box"><h3>Bawat Henerasyon</h3>'+(rows||'<div class="empty">Wala pang data.</div>')+'</div><div class="box"><button class="btn" data-a="gt">Buksan ang Family Tree →</button></div>';
 }
 function treeTab(){
- return '<div class="box"><p class="hint" style="margin-bottom:0">'+(isAdmin?'Admin ka — agad na nase-save ang mga pagbabago at makikita ng lahat.':canWrite===false?'View-only ang access mo.':'Ang mga idadagdag/ie-edit/ide-delete mo ay ipapadala muna sa Admin para ma-approve.')+'</p></div><div id="tl"></div>';
+ return (canWrite===false?'<div class="box"><p class="hint" style="margin-bottom:0">View-only ang access mo.</p></div>':'')+'<div id="tl"></div>';
 }
 function dn(p){var n=String(p.name||'').trim(),m=String(p.mid||'').trim();if(!m)return n;var w=n.split(/\s+/);if(w.length<2)return n+' '+m;var l=w.pop();return w.join(' ')+' '+m+' '+l}
 function isCol(p){return col[p.id]===undefined?gen(p)>=1:col[p.id]}
-function mt(p){var t=[dn(p),p.nick,p.born,p.off].concat((p.spouses||[]).map(function(x){return x.n})).join(' ').toLowerCase();return t.indexOf(q.toLowerCase())>=0}
+function mt(p){var t=[dn(p),p.nick,p.born,p.died,p.off].concat((p.spouses||[]).map(function(x){return x.n})).join(' ').toLowerCase();return t.indexOf(q.toLowerCase())>=0}
 function hl(t){t=String(t==null?'':t);if(!q)return esc(t);var i=t.toLowerCase().indexOf(q.toLowerCase());if(i<0)return esc(t);return esc(t.slice(0,i))+'<mark>'+esc(t.slice(i,i+q.length))+'</mark>'+esc(t.slice(i+q.length))}
 function card(p){
- var g=gen(p),lc=COLS[Math.max(g-1,0)%COLS.length],c=p.gender==='M'?'#3b82f6':p.gender==='F'?'#ec4899':COLS[g%COLS.length],kids=kidsOf(p.id),sp=(p.spouses||[]).map(function(s){return hl(s.n)+(s.d?' ✝':'')}).join(' • ');
+ var g=gen(p),lc=COLS[Math.max(g-1,0)%COLS.length],c=p.gender==='M'?'#3b82f6':p.gender==='F'?'#ec4899':COLS[g%COLS.length],kids=kidsOf(p.id),sp=(p.spouses||[]).map(function(s){return hl(s.n)+sy(s)}).join(' • ');
  var match=!q||mt(p);
  var kh=kids.map(card).join(''),show=kh&&(!isCol(p)||q);
  if(q&&!match&&!kh)return '';
@@ -235,29 +243,31 @@ function notifyReq(x){var d=x.data||{},a=null;
  if(x.type==='add'){var pp=byId(d.parent);a={type:'req',name:dn(d),parent:pp?dn(pp):''}}
  else if(x.type==='edit'){var o=byId(x.pid);if(d.dead&&o&&!o.dead)a={type:'reqdead',name:dn(d)}}
  if(!a)return Promise.resolve();var aid=uid();markSeen(aid);a.ts=Date.now();return w('alerts').doc(aid).set(a)}
+function pendingPopup(x){var d=x.data||{},t=x.type,what=t==='add'?'makasama si <b>'+esc(dn(d))+'</b> sa Family Tree':t==='edit'?'mailapat ang pagbabago kay <b>'+esc(dn(d))+'</b>':t==='del'?'mabura sa Family Tree':'makasama ang tala sa Kasaysayan';
+ modal('<h3 style="margin-top:0">⏳ Hintayin ang approval ng Admin</h3><p>Naipadala na ang idinagdag mo. Hintayin munang i-approve ito ng admin para '+what+'.</p><div class="acts"><button class="btn" data-a="cl">Sige, naintindihan ko</button></div>')}
 function submit(x){
  var id=uid();
  if(isAdmin)return apply(x).then(function(){toast('Na-save ✔')}).catch(fail);
- x.ts=Date.now();return w('pending').doc(id).set(x).then(function(){return notifyReq(x)}).then(function(){msg='Naipadala sa Admin para ma-approve.';toast('Naipadala sa Admin');render()}).catch(fail);
+ x.ts=Date.now();return w('pending').doc(id).set(x).then(function(){return notifyReq(x)}).then(function(){msg='';render();pendingPopup(x)}).catch(fail);
 }
 function apply(x,fp){
  var d=x.data||{};
- if(x.type==='add'){var id=uid();return w('people').doc(id).set({name:d.name,parent:d.parent,spouses:d.spouses||[],dead:!!d.dead,off:d.off||'',note:d.note||'',photo:d.photo||'',gender:d.gender||'',mid:d.mid||'',nick:d.nick||'',born:d.born||'',ts:Date.now()}).then(function(){if(fp)return;var aid=uid(),pp=byId(d.parent);markSeen(aid);return w('alerts').doc(aid).set({type:'new',pid:id,name:dn(d),parent:pp?dn(pp):'',ts:Date.now()})})}
- if(x.type==='edit'){var old=byId(x.pid),nd=!!d.dead&&!!old&&!old.dead,aid=uid();return w('people').doc(x.pid).update({name:d.name,spouses:d.spouses||[],dead:!!d.dead,off:d.off||'',note:d.note||'',photo:d.photo||'',gender:d.gender||'',mid:d.mid||'',nick:d.nick||'',born:d.born||''}).then(function(){if(nd&&!fp){markSeen(aid);return w('alerts').doc(aid).set({pid:x.pid,name:dn(d),ts:Date.now()})}})}
+ if(x.type==='add'){var id=uid();return w('people').doc(id).set({name:d.name,parent:d.parent,spouses:d.spouses||[],dead:!!d.dead,off:d.off||'',note:d.note||'',photo:d.photo||'',gender:d.gender||'',mid:d.mid||'',nick:d.nick||'',born:d.born||'',died:d.died||'',ts:Date.now()}).then(function(){if(fp)return;var aid=uid(),pp=byId(d.parent);markSeen(aid);return w('alerts').doc(aid).set({type:'new',pid:id,name:dn(d),parent:pp?dn(pp):'',ts:Date.now()})})}
+ if(x.type==='edit'){var old=byId(x.pid),nd=!!d.dead&&!!old&&!old.dead,aid=uid();return w('people').doc(x.pid).update({name:d.name,spouses:d.spouses||[],dead:!!d.dead,off:d.off||'',note:d.note||'',photo:d.photo||'',gender:d.gender||'',mid:d.mid||'',nick:d.nick||'',born:d.born||'',died:d.died||''}).then(function(){if(nd&&!fp){markSeen(aid);return w('alerts').doc(aid).set({pid:x.pid,name:dn(d),ts:Date.now()})}})}
  if(x.type==='del')return Promise.all(desc(x.pid).map(function(i){return w('people').doc(i).delete()}));
  if(x.type==='note'){var n=uid();return w('notes').doc(n).set({text:d.text,date:new Date().toISOString().slice(0,10),ts:Date.now()})}
  return Promise.resolve();
 }
-function spRow(s){return '<div class="row"><input class="sn" placeholder="Pangalan ng asawa" value="'+esc(s.n)+'"><label style="margin:0;white-space:nowrap"><input type="checkbox" class="sd" '+(s.d?'checked':'')+'> ✝</label><button class="btn r s" type="button" data-a="rmsp">✕</button></div>'}
+function spRow(s){return '<div class="spw"><div class="row"><input class="sn" placeholder="Pangalan ng asawa" value="'+esc(s.n)+'"><label style="margin:0;white-space:nowrap"><input type="checkbox" class="sd" '+(s.d?'checked':'')+'> ✝</label><button class="btn r s" type="button" data-a="rmsp">✕</button></div><div class="row"><input class="sb" inputmode="numeric" maxlength="4" placeholder="Taon ng kapanganakan" value="'+esc(s.b||'')+'"><input class="sy" inputmode="numeric" maxlength="4" placeholder="Taon ng pagyao" value="'+esc(s.y||'')+'"></div></div>'}
 function form(mode,id){
- var p=mode==='edit'?byId(id):{name:'',spouses:[],dead:false,off:'',note:'',photo:'',gender:'',mid:'',nick:'',born:''};curPhoto=p.photo||'';
+ var p=mode==='edit'?byId(id):{name:'',spouses:[],dead:false,off:'',note:'',photo:'',gender:'',mid:'',nick:'',born:'',died:''};curPhoto=p.photo||'';
  modal('<h3 style="margin-top:0">'+(mode==='edit'?'Edit':'Magdagdag ng Anak/Apo')+'</h3>'+(mode==='add'?'<p class="hint">Magulang: <b>'+esc(dn(byId(id)))+'</b></p>':'')+
  '<label>Pangalan at Apelyido</label><input id="f_n" value="'+esc(p.name)+'"><label>Apelyido ng Nanay (noong dalaga)</label><input id="f_m" value="'+esc(p.mid||'')+'"><label>Palayaw (opsyonal)</label><input id="f_k" value="'+esc(p.nick||'')+'"><label>Taon ng kapanganakan (opsyonal)</label><input id="f_b" inputmode="numeric" maxlength="4" value="'+esc(p.born||'')+'"><label>Kasarian</label><select id="f_g"><option value="">—</option><option value="M"'+(p.gender==='M'?' selected':'')+'>Lalaki</option><option value="F"'+(p.gender==='F'?' selected':'')+'>Babae</option></select><label>Posisyon / Opisyal (opsyonal)</label><input id="f_o" placeholder="hal. Presidente, Treasurer" value="'+esc(p.off||'')+'">'+
- '<div class="row"><input type="checkbox" id="f_d" '+(p.dead?'checked':'')+'><label style="margin:0">✝ Yumao na</label></div>'+
+ '<div class="row"><input type="checkbox" id="f_d" '+(p.dead?'checked':'')+'><label style="margin:0">✝ Yumao na</label></div>'+'<label>Taon ng pagyao (opsyonal)</label><input id="f_x" inputmode="numeric" maxlength="4" value="'+esc(p.died||'')+'">'+
  '<label>Mga Asawa (pwedeng higit sa isa)</label><div id="f_s">'+(p.spouses||[]).map(spRow).join('')+'</div><div class="acts"><button class="btn g s" type="button" data-a="addsp">+ Dagdag na asawa</button></div>'+
  '<label>Tala / kasaysayan</label><textarea id="f_t" rows="3">'+esc(p.note||'')+'</textarea><div class="acts" style="margin-top:14px"><button class="btn" data-a="fs" data-m="'+mode+'" data-id="'+id+'">'+(isAdmin?'I-save':'Ipadala sa Admin')+'</button><button class="btn g" data-a="cl">Kanselahin</button></div>');
 }
-function readForm(){return {born:($('f_b').value||'').replace(/\D/g,'').slice(0,4),nick:$('f_k').value.trim().toUpperCase(),mid:$('f_m').value.trim().toUpperCase(),gender:$('f_g').value,photo:curPhoto,name:$('f_n').value.trim().toUpperCase(),off:$('f_o').value.trim().toUpperCase(),dead:$('f_d').checked,note:$('f_t').value.trim().toUpperCase(),spouses:[].slice.call(document.querySelectorAll('#f_s .row')).map(function(r){return {n:r.querySelector('.sn').value.trim().toUpperCase(),d:r.querySelector('.sd').checked}}).filter(function(s){return s.n})}}
+function readForm(){return {died:($('f_x').value||'').replace(/\D/g,'').slice(0,4),born:($('f_b').value||'').replace(/\D/g,'').slice(0,4),nick:$('f_k').value.trim().toUpperCase(),mid:$('f_m').value.trim().toUpperCase(),gender:$('f_g').value,photo:curPhoto,name:$('f_n').value.trim().toUpperCase(),off:$('f_o').value.trim().toUpperCase(),dead:$('f_d').checked,note:$('f_t').value.trim().toUpperCase(),spouses:[].slice.call(document.querySelectorAll('#f_s .spw')).map(function(r){return {n:r.querySelector('.sn').value.trim().toUpperCase(),d:r.querySelector('.sd').checked,b:(r.querySelector('.sb').value||'').replace(/\D/g,'').slice(0,4),y:(r.querySelector('.sy').value||'').replace(/\D/g,'').slice(0,4)}}).filter(function(s){return s.n})}}
 
 document.addEventListener('click',function(e){
  var t=e.target.closest('[data-a],[data-t]');if(!t)return;msg='';
@@ -271,10 +281,13 @@ document.addEventListener('click',function(e){
   hashPw($('ap').value,adminDoc.salt).then(function(h){if(u===String(adminDoc.user).toLowerCase()&&h===adminDoc.hash){pwAdmin=true;try{localStorage.setItem('amv_k',h)}catch(e){}$('dlg').close();setAdm();render()}else toast('Maling username o password.')})}
  else if(a==='sset'){var su=$('su').value.trim(),sp=$('sp').value;if(!su||sp.length<6){toast('Ilagay ang username at password na 6 na letra pataas.');return}
   var salt=uid()+uid();hashPw(sp,salt).then(function(h){return db.doc('adminacct/cred').set({user:su,salt:salt,hash:h}).then(function(){pwAdmin=true;try{localStorage.setItem('amv_k',h)}catch(e){}})}).then(function(){$('dlg').close();msg='Na-save ang admin account.';setAdm();render()}).catch(fail)}
- else if(a==='rmsp')t.closest('.row').remove();
+ else if(a==='rmsp')t.closest('.spw').remove();
  else if(a==='tg'){col[id]=!isCol(byId(id));drawTree()}
  else if(a==='fs'){var d=readForm();if(!d.name){toast('Ilagay ang pangalan.');return}
   if(d.born&&(d.born.length!==4||+d.born<1000||+d.born>new Date().getFullYear())){toast('Taon lang ang ilagay, 4 na numero (hal. 1950).');return}
+  if(d.died&&(d.died.length!==4||+d.died<1000||+d.died>new Date().getFullYear()||(d.born&&+d.died<+d.born))){toast('Taon ng pagyao: 4 na numero at hindi mas maaga sa kapanganakan.');return}
+  if(d.spouses.some(function(s){return (s.b&&s.b.length!==4)||(s.y&&s.y.length!==4)||(s.b&&s.y&&+s.y<+s.b)})){toast('Ang taon ng asawa ay dapat 4 na numero.');return}
+  if(d.died)d.dead=true;
   var full=dn(d).toLowerCase(),self=t.dataset.m==='edit'?id:null;
   if(!d.mid&&P.some(function(x){return x.id!==self&&dn(x).toLowerCase()===full})){toast('May kapareho nang pangalan. Ilagay ang apelyido ng nanay (noong dalaga) para hindi malito.');return}
   if(t.dataset.m==='add'){d.parent=id;submit({type:'add',data:d})}else submit({type:'edit',pid:id,data:d});$('dlg').close()}
@@ -312,9 +325,9 @@ function goTo(pid){var p=byId(pid);if(!p){toast('Wala na siya sa tree.');return}
  setTimeout(function(){var e=$('pc_'+pid);if(e){e.scrollIntoView({behavior:'smooth',block:'center'});e.classList.add('flash');setTimeout(function(){e.classList.remove('flash')},3500)}},80)}
 var sv='';
 function hlv(t,v){t=String(t==null?'':t);var i=t.toLowerCase().indexOf(v.toLowerCase());if(i<0||!v)return esc(t);return esc(t.slice(0,i))+'<mark>'+esc(t.slice(i,i+v.length))+'</mark>'+esc(t.slice(i+v.length))}
-function resList(v){v=v.toLowerCase();return P.filter(function(p){var t=[dn(p),p.nick,p.born,p.off].concat((p.spouses||[]).map(function(x){return x.n})).join(' ').toLowerCase();return t.indexOf(v)>=0}).sort(function(a,b){return gen(a)-gen(b)||dn(a).localeCompare(dn(b))})}
+function resList(v){v=v.toLowerCase();return P.filter(function(p){var t=[dn(p),p.nick,p.born,p.died,p.off].concat((p.spouses||[]).map(function(x){return x.n})).join(' ').toLowerCase();return t.indexOf(v)>=0}).sort(function(a,b){return gen(a)-gen(b)||dn(a).localeCompare(dn(b))})}
 function resItem(p,v){var g=gen(p),lc=COLS[Math.max(g-1,0)%COLS.length],c=p.gender==='M'?'#3b82f6':p.gender==='F'?'#ec4899':COLS[g%COLS.length],par=p.parent?byId(p.parent):null;
- return '<button class="sr" type="button" data-a="sgo" data-id="'+p.id+'"><span class="av sm" style="background:'+c+';--c:'+c+'">'+avh(p)+'</span><span class="st"><b>'+hlv(dn(p),v)+(p.nick?' <span class="nick">“'+hlv(p.nick,v)+'”</span>':'')+(p.dead?' ✝':'')+'</b><small>'+(p.born?esc(p.born)+' • ':'')+(par?'Anak ni '+esc(dn(par)):'Pinakamatanda sa pamilya')+'</small></span><span class="tag" style="color:'+lc+';border-color:'+lc+';background:'+lc+'22">Gen '+g+'</span><span class="chev">›</span></button>'}
+ return '<button class="sr'+(p.dead?' dd':'')+'" type="button" data-a="sgo" data-id="'+p.id+'"><span class="av sm" style="background:'+c+';--c:'+c+'">'+avh(p)+'</span><span class="st"><b>'+hlv(dn(p),v)+(p.nick?' <span class="nick">“'+hlv(p.nick,v)+'”</span>':'')+(p.dead?' ✝':'')+'</b><small>'+(yrs(p)?esc(yrs(p))+' • ':'')+(par?'Anak ni '+esc(dn(par)):'Pinakamatanda sa pamilya')+'</small></span><span class="tag" style="color:'+lc+';border-color:'+lc+';background:'+lc+'22">Gen '+g+'</span><span class="chev">›</span></button>'}
 var gs='';
 function syncGen(){var s=$('gsel');if(!s)return;var mx=0,cnt={};P.forEach(function(p){var g=gen(p);if(g>=1){cnt[g]=(cnt[g]||0)+1;if(g>mx)mx=g}});
  var sig=mx+':'+Object.keys(cnt).map(function(k){return cnt[k]}).join(',');if(s.dataset.sig===sig)return;s.dataset.sig=sig;
@@ -342,6 +355,7 @@ document.addEventListener('change',function(e){if(e.target.id!=='bkf')return;var
  f.text().then(function(t){var o=JSON.parse(t);if(!o||typeof o!=='object'||Array.isArray(o))throw 0;bkText=t;modal('<h3 style="margin-top:0">📂 I-Restore?</h3><p>Papalitan nito ang lahat ng data sa device na ito ng laman ng backup file.</p><div class="acts"><button class="btn" data-a="impok">Oo, i-restore</button><button class="btn g" data-a="cl">Kanselahin</button></div>')}).catch(function(){toast('Hindi valid ang backup file.')})});
 function doLogout(){pwAdmin=false;try{localStorage.removeItem('amv_k')}catch(e){}setAdm();render();toast('Naka-logout na')}
 document.addEventListener('input',function(e){var t=e.target;
+ if(t.id==='f_b'||t.id==='f_x'||(t.classList&&(t.classList.contains('sb')||t.classList.contains('sy')))){t.value=t.value.replace(/\D/g,'').slice(0,4);return}
  if(t.id==='sq'){sv=t.value.trim();if(sv){gs='';var gse=$('gsel');if(gse)gse.value=''}showRes();return}
  if((t.tagName==='TEXTAREA'||(t.tagName==='INPUT'&&t.type==='text'))&&!t.dataset.nc){var a=t.selectionStart,b=t.selectionEnd,u=t.value.toUpperCase();if(u!==t.value){t.value=u;try{t.setSelectionRange(a,b)}catch(x){}}}});
 
