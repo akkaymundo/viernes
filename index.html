@@ -77,8 +77,6 @@ input,select,textarea{width:100%;padding:10px 11px;border:1px solid var(--ln);bo
 .ft{position:relative;overflow:hidden;margin-top:10px;padding:34px 14px calc(26px + env(safe-area-inset-bottom,0px));color:#fff;text-align:center;border-radius:30px 30px 0 0;background-image:radial-gradient(circle at 15% 85%,rgba(255,255,255,.2),transparent 45%),radial-gradient(circle at 85% 10%,rgba(255,255,255,.14),transparent 40%),linear-gradient(135deg,#4338ca,#7c3aed 55%,#c026d3)}
 .ftw{position:relative;z-index:1}.ft1{font-weight:800;letter-spacing:.6px;font-size:16px}.ft2{font-size:13px;opacity:.92;margin-top:3px}.ft2 a{color:#fff;font-weight:800;text-decoration:underline;text-underline-offset:3px}.ft3{font-size:12px;opacity:.75;margin-top:8px}
 .ft .deco{transform-origin:center}.ft .deco.r{transform:scaleX(-1)}
-.hand{display:inline-block;font-size:21px;line-height:1;align-self:center;animation:pt .9s ease-in-out infinite}
-@keyframes pt{0%,100%{transform:translateX(-5px)}50%{transform:translateX(6px)}}
 .btn.pulse{animation:pl 1.6s ease-out infinite}
 @keyframes pl{0%{box-shadow:0 0 0 0 rgba(99,102,241,.55)}70%{box-shadow:0 0 0 10px rgba(99,102,241,0)}100%{box-shadow:0 0 0 0 rgba(99,102,241,0)}}
 @media (prefers-reduced-motion:reduce){.btn.pulse{animation:none}}
@@ -226,7 +224,7 @@ function setT(){
  else h+='<div class="box"><p class="hint">Naka-login ka bilang may-ari/Editor ng page, na naka-link sa iyong Claude account.</p></div>';
  if(platAdmin&&!isOwn)h+='<div class="box"><p class="hint">Ang gumawa/may-ari ng site lang ang makakapagpalit ng admin password.</p></div>';
  if(isOwn||pwAdmin||!adminDoc)h+='<div class="box"><h3>Admin account</h3><p class="hint">Itakda ang username at password na gagamitin ng ibang miyembro para maging admin. Papalitan nito ang luma.</p><label>Username</label><input data-nc="1" id="su" value="'+esc(adminDoc?adminDoc.user:'')+'" autocomplete="off"><label>Bagong password (6+ letra)</label><input id="sp" type="password" autocomplete="new-password"><div class="acts" style="margin-top:12px"><button class="btn" data-a="sset">I-save</button></div></div>';
- h+='<div class="box"><h3>💾 Backup / Restore</h3><p class="hint">'+(window.__cloud?'☁ Online database ito: makikita ng lahat ng may link ang mga naka-save.':'Naka-save ang data sa device/browser na ito lang.')+' Pindutin ang <b>Backup</b> para mag-save ng file na pwedeng ipadala sa iba. Pindutin ang <b>I-Restore</b> at piliin ang backup file para ibalik ang data.</p><div class="acts"><button class="btn" data-a="exp">💾 Backup</button><button class="btn g" data-a="imp">📂 I-Restore</button>'+(window.__cloud?'<button class="btn g" data-a="diag">🔍 Subukan ang koneksyon</button>':'')+'</div><input type="file" id="bkf" accept=".json,application/json" hidden></div>';
+ h+='<div class="box"><h3>💾 Backup / Restore</h3>'+(window.__cloud?'<p class="hint">☁ Online database</p>':'')+'<div class="acts"><button class="btn" data-a="exp">💾 Backup</button><button class="btn g" data-a="imp">📂 I-Restore</button>'+(window.__cloud?'<button class="btn g" data-a="diag">🔍 Subukan ang koneksyon</button>':'')+'</div><input type="file" id="bkf" accept=".json,application/json" hidden></div>';
  return h}
 function lbl(x){var p=x.pid?byId(x.pid):null,d=x.data||{};
  if(x.type==='add')return '➕ Dagdag: <b>'+esc(dn(d))+'</b> (anak ni '+esc(byId(d.parent)?dn(byId(d.parent)):'?')+')';
@@ -341,6 +339,9 @@ function showRes(){var el=$('sres');if(!el)return;if(!db||!ready){el.innerHTML='
   el.innerHTML='<div class="srp"><div class="srh">📋 Gen '+g+' — <b>'+m.length+'</b> miyembro • i-tap para makita sa Family Tree</div>'+(m.map(function(p){return resItem(p,'')}).join('')||'<div class="hint" style="padding:8px 10px">Wala pang miyembro sa henerasyong ito.</div>')+'</div>';el.style.display='block';return}
  el.innerHTML='';el.style.display='none'}
 document.addEventListener('change',function(e){if(e.target.id!=='gsel')return;gs=e.target.value;if(gs!==''){sv='';var si=$('sq');if(si)si.value=''}showRes()});
+document.addEventListener('click',function(e){var t=e.target;if(t&&t.closest&&(t.closest('#sres')||t.id==='sq'||t.id==='gsel'))return;
+ if(sv||gs!==''){sv='';gs='';var si=$('sq');if(si)si.value='';var ge=$('gsel');if(ge)ge.value='';showRes()}});
+
 function setAdm(){var n=platAdmin||pwAdmin,ch=n!==isAdmin;isAdmin=n;if(ch){render();drawLogo()}}
 function hashPw(pw,salt){var e=new TextEncoder();return crypto.subtle.importKey('raw',e.encode(pw),'PBKDF2',false,['deriveBits']).then(function(k){return crypto.subtle.deriveBits({name:'PBKDF2',salt:e.encode(salt),iterations:100000,hash:'SHA-256'},k,256)}).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0')}).join('')})}
 var bkText='';
