@@ -81,8 +81,8 @@ input,select,textarea{width:100%;padding:10px 11px;border:1px solid var(--ln);bo
 @keyframes pl{0%{box-shadow:0 0 0 0 rgba(99,102,241,.55)}70%{box-shadow:0 0 0 10px rgba(99,102,241,0)}100%{box-shadow:0 0 0 0 rgba(99,102,241,0)}}
 @media (prefers-reduced-motion:reduce){.btn.pulse{animation:none}}
 .nf{background:#111827;color:#fff;border-radius:18px;padding:14px 44px 14px 16px;box-shadow:0 12px 30px rgba(0,0,0,.45);cursor:pointer;position:relative;animation:nin .35s ease;border-left:5px solid #f59e0b}
-.nf.new{border-left-color:#10b981}
-.nf.req{border-left-color:#6366f1}
+.nf.new,.nf.req{background:#dcfce7;color:#14532d;border-left-color:#16a34a;box-shadow:0 12px 30px rgba(22,101,52,.35)}
+.nf.new .x,.nf.req .x{color:#14532d}
 .nf .x{position:absolute;right:8px;top:6px;background:transparent;border:0;color:#fff;font-size:20px;cursor:pointer;padding:4px 8px}
 @keyframes nin{from{transform:translateY(-18px);opacity:0}to{transform:none;opacity:1}}
 #notif{display:none;position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 10px);width:min(430px,calc(100% - 20px));z-index:60}
@@ -124,6 +124,8 @@ input,select,textarea{width:100%;padding:10px 11px;border:1px solid var(--ln);bo
 .dupbox{border-radius:12px;padding:8px 10px;margin-top:6px;font-size:13px}
 .dupbox.bad{background:#fff7ed;border:1px solid #f59e0b;color:#92400e}
 .dupbox.ok{background:#ecfdf5;border:1px solid #10b981;color:#065f46}
+.gpop{margin:-18px;padding:18px;background:linear-gradient(#ecfdf5,#d1fae5);color:#14532d;border-radius:22px}
+.gpop .btn{background:#16a34a}
 .err{background:#fff1f2;color:#9f1239;border-radius:14px;padding:14px;margin:12px 0}
 </style></head>
 <body>
@@ -269,11 +271,10 @@ function w(p){return db.collection(p)}
 function toast(t){var e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(window._tt);window._tt=setTimeout(function(){e.style.display='none'},3500)}
 function fail(e){msg='May error: '+(e&&(e.code||e.message)||'')+' — subukan ulit.';toast('May error. Subukan ulit.');render()}
 function notifyReq(x,id){var d=x.data||{},a=null;
- if(x.type==='add'){var pp=byId(d.parent);a={type:'req',name:dn(d),parent:pp?dn(pp):''}}
- else if(x.type==='edit'){var o=byId(x.pid);if(d.dead&&o&&!o.dead)a={type:'reqdead',name:dn(d),rid:id,due:Date.now()+120000}}
+ if(x.type==='edit'){var o=byId(x.pid);if(d.dead&&o&&!o.dead)a={type:'reqdead',name:dn(d),rid:id,due:Date.now()+120000}}
  if(!a)return Promise.resolve();var aid=uid();markSeen(aid);a.ts=Date.now();return w('alerts').doc(aid).set(a)}
 function pendingPopup(x){var d=x.data||{},t=x.type,what=t==='add'?'makasama si <b>'+esc(dn(d))+'</b> sa Family Tree':t==='edit'?'mailapat ang pagbabago kay <b>'+esc(dn(d))+'</b>':t==='del'?'mabura sa Family Tree':'makasama ang tala sa Kasaysayan';
- modal('<h3 style="margin-top:0">⏳ Hintayin ang approval ng Admin</h3><p>Naipadala na ang idinagdag mo. Hintayin munang i-approve ito ng admin para '+what+'.</p><div class="acts"><button class="btn" data-a="cl">Sige, naintindihan ko</button></div>')}
+ modal('<div class="gpop"><h3 style="margin-top:0">⏳ Hintayin ang approval ng Admin</h3><p>Naipadala na ang idinagdag mo. Hintayin munang i-approve ito ng admin para '+what+'.</p><div class="acts"><button class="btn" data-a="cl">Sige, naintindihan ko</button></div></div>')}
 function submit(x){
  var id=uid();
  if(isAdmin)return apply(x).then(function(){toast('Na-save ✔')}).catch(fail);
@@ -281,7 +282,7 @@ function submit(x){
 }
 function apply(x,fp){
  var d=x.data||{};
- if(x.type==='add'){var id=uid();return w('people').doc(id).set({name:d.name,parent:d.parent,spouses:d.spouses||[],dead:!!d.dead,off:d.off||'',note:d.note||'',photo:d.photo||'',gender:d.gender||'',mid:d.mid||'',nick:d.nick||'',born:d.born||'',died:d.died||'',ts:Date.now()}).then(function(){if(fp)return;var aid=uid(),pp=byId(d.parent);markSeen(aid);return w('alerts').doc(aid).set({type:'new',pid:id,name:dn(d),parent:pp?dn(pp):'',ts:Date.now()})})}
+ if(x.type==='add'){var id=uid();return w('people').doc(id).set({name:d.name,parent:d.parent,spouses:d.spouses||[],dead:!!d.dead,off:d.off||'',note:d.note||'',photo:d.photo||'',gender:d.gender||'',mid:d.mid||'',nick:d.nick||'',born:d.born||'',died:d.died||'',ts:Date.now()}).then(function(){var aid=uid(),pp=byId(d.parent);markSeen(aid);return w('alerts').doc(aid).set({type:'new',pid:id,name:dn(d),parent:pp?dn(pp):'',ts:Date.now()})})}
  if(x.type==='edit'){var old=byId(x.pid),nd=!!d.dead&&!!old&&!old.dead,aid=uid();return w('people').doc(x.pid).update({name:d.name,spouses:d.spouses||[],dead:!!d.dead,off:d.off||'',note:d.note||'',photo:d.photo||'',gender:d.gender||'',mid:d.mid||'',nick:d.nick||'',born:d.born||'',died:d.died||''}).then(function(){if(nd){markSeen(aid);return w('alerts').doc(aid).set({type:'dead',pid:x.pid,name:dn(d),ts:Date.now(),due:Date.now()+120000})}})}
  if(x.type==='del')return Promise.all(desc(x.pid).map(function(i){return w('people').doc(i).delete()}));
  if(x.type==='note'){var n=uid();return w('notes').doc(n).set({text:d.text,date:new Date().toISOString().slice(0,10),ts:Date.now()})}
@@ -319,7 +320,7 @@ document.addEventListener('click',function(e){
   (changing?hashPw(oldEl.value,adminDoc.salt).then(function(oh){if(oh!==adminDoc.hash){toast('Mali ang kasalukuyang password.');return}return doSave()}):doSave()).catch(fail)}
  else if(a==='rmsp')t.closest('.spw').remove();
  else if(a==='tg'){col[id]=!isCol(byId(id));drawTree()}
- else if(a==='fs'){var d=readForm();if(!d.name){toast('Ilagay ang pangalan.');return}
+ else if(a==='fs'){if(blockUnreg())return;var d=readForm();if(!d.name){toast('Ilagay ang pangalan.');return}
   if(d.born&&(d.born.length!==4||+d.born<1000||+d.born>new Date().getFullYear())){toast('Taon lang ang ilagay, 4 na numero (hal. 1950).');return}
   if(d.died&&(d.died.length!==4||+d.died<1000||+d.died>new Date().getFullYear()||(d.born&&+d.died<+d.born))){toast('Taon ng pagyao: 4 na numero at hindi mas maaga sa kapanganakan.');return}
   if(d.spouses.some(function(s){return (s.b&&s.b.length!==4)||(s.y&&s.y.length!==4)||(s.b&&s.y&&+s.y<+s.b)})){toast('Ang taon ng asawa ay dapat 4 na numero.');return}
@@ -329,7 +330,7 @@ document.addEventListener('click',function(e){
   if(!isEd||(orig&&normN(dn(orig))!==normN(dn(d)))){var dc=dupCheck(d,isEd?id:'',isEd?((orig||{}).parent||''):id);if(!dc.ok){dupPopup(dc);return}}
   if(t.dataset.m==='add'){d.parent=id;submit({type:'add',data:d})}else submit({type:'edit',pid:id,data:d});$('dlg').close()}
  else if(a==='del'){var p=byId(id),n=desc(id).length-1;modal('<h3 style="margin-top:0">🗑 I-delete?</h3><p>Buburahin si <b>'+esc(dn(p))+'</b>'+(n?' at ang '+n+' niyang inapo':'')+'.'+(isAdmin?'':' Ipapadala muna ito sa Admin.')+'</p><div class="acts"><button class="btn r" data-a="delok" data-id="'+id+'">Oo, i-delete</button><button class="btn g" data-a="cl">Hindi</button></div>')}
- else if(a==='delok'){$('dlg').close();submit({type:'del',pid:id,data:{}})}
+ else if(a==='delok'){if(blockUnreg())return;$('dlg').close();submit({type:'del',pid:id,data:{}})}
  else if(a==='diag'){modal('<h3 style="margin-top:0">🔍 Koneksyon sa database</h3><p id="dg">Sinusubukan…</p><div class="acts"><button class="btn g" data-a="cl">Isara</button></div>');window.__diag().then(function(t){var e=$('dg');if(e)e.textContent=t})}
  else if(a==='exp')doBackup();
  else if(a==='imp')$('bkf').click();
@@ -370,7 +371,7 @@ document.addEventListener('click',function(e){
  else if(a==='wd'){w('pending').doc(id).delete().then(function(){mineDel(id);toast('Nabawi ang request mo.')}).catch(fail)}
  else if(a==='lgout')doLogout();
  else if(a==='lgin'){tab='set';render()}
- else if(a==='hadd'){var v=$('hn').value.trim().toUpperCase();if(v)submit({type:'note',data:{text:v}})}
+ else if(a==='hadd'){if(blockUnreg())return;var v=$('hn').value.trim().toUpperCase();if(v)submit({type:'note',data:{text:v}})}
  else if(a==='hdel'){w('notes').doc(id).delete().catch(fail)}
  else if(a==='ap'){var x=Q.find(function(z){return z.id===id});if(x)apply(x,true).then(function(){return w('pending').doc(id).delete()}).catch(fail)}
  else if(a==='rj'){w('pending').doc(id).delete().catch(fail)}
@@ -465,6 +466,8 @@ function dupSign(){var el=$('dupw');if(!el||!formCtx)return;
 var encBusy=false;
 function syncEnc(){if(encBusy||!KEYS)return;var r=myReg();if(!r||r.enc)return;var pw='';try{pw=localStorage.getItem('amv_regpw')||''}catch(e){}if(!pw)return;
  encBusy=true;encPw(pw).then(function(en){return db.collection('registrations').doc(r.id).update({enc:en})}).then(function(){try{localStorage.removeItem('amv_regpw')}catch(e){}}).catch(function(){}).then(function(){encBusy=false})}
+function regEditPopup(){miniPopup('<div style="font-size:40px">🔒</div><h3 style="margin:6px 0">Mag-register muna</h3><p>Para makapag-edit o makapagdagdag sa Family Tree, kailangan mo munang mag-register.</p><div style="text-align:left;font-size:13.5px;background:var(--bg);border-radius:12px;padding:10px 12px"><b>Paano mag-register:</b><ol style="margin:6px 0 0;padding-left:20px"><li>Pindutin ang <b>⚙ Settings</b> sa menu.</li><li>Sa <b>Mag-register muna</b>, isulat ang <b>complete name mo</b> gaya ng nasa Family Tree.</li><li>Gumawa ng sarili mong <b>password</b> at ulitin ito.</li><li>Pindutin ang <b>Mag-register</b>, tapos bumalik at subukan ulit.</li></ol></div><p class="hint" style="margin-top:8px">Mawawala ang isinulat mo kung pupunta ka na sa Settings.</p><div class="acts" style="justify-content:center"><button class="btn" data-a="mpset">Pumunta sa Settings</button><button class="btn g" data-a="mpx">Sige</button></div>')}
+function blockUnreg(){if(isAdmin||isOwn||myReg())return false;regEditPopup();return true}
 function needReg(){return !isOwn&&!myReg()}
 function miniPopup(h){var o=$('mp');if(o)o.remove();o=document.createElement('div');o.id='mp';o.innerHTML='<div class="mpc">'+h+'</div>';o.addEventListener('click',function(e){if(e.target===o)o.remove()});($('dlg').open?$('dlg'):document.body).appendChild(o)}
 function regPopup(){miniPopup('<div style="font-size:40px">🔒</div><h3 style="margin:6px 0">Mag-register muna</h3><p>Para maiwasan ang aksidenteng pagpindot ng <b>Yumao na</b>, kailangan mong mag-register muna gamit ang pangalan mo sa Family Tree.</p><div class="acts" style="justify-content:center"><button class="btn" data-a="mpset">Mag-register</button><button class="btn g" data-a="mpx">Sige</button></div>')}
@@ -472,7 +475,7 @@ function mineList(){try{return JSON.parse(localStorage.getItem('amv_mine')||'[]'
 function mineHas(id){return mineList().indexOf(id)>=0}
 function mineAdd(id){var l=mineList();if(l.indexOf(id)<0){l.push(id);try{localStorage.setItem('amv_mine',JSON.stringify(l.slice(-50)))}catch(e){}}}
 function mineDel(id){var l=mineList().filter(function(z){return z!==id});try{localStorage.setItem('amv_mine',JSON.stringify(l))}catch(e){}}
-function alertValid(a){var t=a.type;if(!t||t==='dead'){var p=byId(a.pid);return !!(p&&p.dead)}if(t==='reqdead')return Q.some(function(r){return r.id===a.rid});return true}
+function alertValid(a){var t=a.type;if(!t||t==='dead'){var p=byId(a.pid);return !!(p&&p.dead)}if(t==='reqdead')return Q.some(function(r){return r.id===a.rid});if(t==='req')return false;return true}
 setInterval(function(){showAlert()},15000);
 document.addEventListener('change',function(e){var t=e.target;if(t&&t.id==='f_d'){if(!t.checked){dpOk=false;return}if(!t.defaultChecked&&!isOwn){t.checked=false;if(!myReg())regPopup();else{dpFrom='chk';askPw()}}}});
 function setAdm(){var n=platAdmin||pwAdmin,ch=n!==isAdmin;isAdmin=n;if(ch){render();drawLogo()}}
