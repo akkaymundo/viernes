@@ -7,6 +7,9 @@
 <link rel="preconnect" href="https://firestore.googleapis.com">
 <link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js">
 <link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6d28d9">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>REYMUNDO DIZA VIERNES — Family Tree</title>
 <style>
 :root{--bg:#f3f5fb;--card:rgba(255,255,255,.86);--solid:#fff;--tx:#18202f;--mu:#6a7590;--pr:#6366f1;--pr2:#a855f7;--ok:#16a34a;--bad:#e11d48;--ln:#e2e6f2;--sh:0 8px 28px rgba(60,70,130,.10);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -245,6 +248,7 @@ function setT(){
  if(isAdmin&&adminDoc&&adminDoc.by)h+='<div class="box" style="border:2px solid #f59e0b"><b>🔔 Huling nagpalit ng admin login</b><div class="hint" style="margin-top:4px">Si <b>'+esc(adminDoc.by)+'</b> • '+esc(fmtDate(adminDoc.at))+'<br>Username: <b>'+esc(adminDoc.user)+'</b></div></div>';
  if(isOwn||pwAdmin||(!adminDoc&&myReg()))h+='<div class="box"><h3>🔑 '+(adminDoc?'Palitan ang Username at Password':'Itakda ang Admin account')+'</h3>'+(adminDoc?'<p class="hint">Admin lang ang nakakakita nito. Pagkapalit, makikita ng ibang admin sa Settings kung sino ang nagpalit at ang bagong username.</p>':'')+''+(myReg()?'<p class="hint">Ikaw si <b>'+esc(myReg().name)+'</b></p>':'<label>Pangalan mo (para malaman kung sino ang nagpalit)</label><input id="cp_by" autocomplete="off">')+''+(adminDoc?'<label>Kasalukuyang password</label><input id="cp_old" type="password" autocomplete="current-password">':'')+'<label>Bagong username</label><input data-nc="1" id="su" value="'+esc(adminDoc?adminDoc.user:'')+'" autocomplete="off"><label>Bagong password (6+ letra)</label><input id="sp" type="password" autocomplete="new-password">'+(adminDoc?'<div class="row"><input type="checkbox" id="cp_ev"><label style="margin:0">Palabasin ang ibang admin (kailangan nilang mag-login ulit)</label></div>':'')+'<div class="acts" style="margin-top:12px"><button class="btn" data-a="sset">I-save</button></div></div>';
  if(isAdmin)h+='<div class="box"><h3>👥 Mga Nakarehistro</h3>'+(REG.length?REG.slice().sort(function(a,b){return (a.ts||0)-(b.ts||0)}).map(function(r){return '<div class="person" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span><b>'+esc(r.name)+'</b><br><span class="hint">'+esc(fmtDate(r.ts))+'</span></span><span style="display:flex;gap:6px"><button class="btn g s" data-a="rgeye" data-id="'+esc(r.id)+'" aria-label="Tingnan ang password">👁</button><button class="btn g s" data-a="rgrm" data-id="'+esc(r.id)+'">Alisin</button></span></div>'}).join(''):'<div class="hint">Wala pang nakarehistro.</div>')+'</div>';
+ if(deferredInst)h+='<div class="box"><h3>📲 I-install ang app</h3><p class="hint">Lalabas ang Akkay Mundo sa home screen mo na parang app.</p><button class="btn" data-a="inst">📲 I-install</button></div>';
  if(isAdmin&&window.__cloud)h+=visBox();
  h+='<div class="box"><h3>💾 Backup / Restore</h3>'+(window.__cloud?'<p class="hint">☁ Online database</p>':'')+'<div class="acts"><button class="btn" data-a="exp">💾 Backup</button><button class="btn g" data-a="imp">📂 I-Restore</button>'+(window.__cloud?'<button class="btn g" data-a="diag">🔍 Subukan ang koneksyon</button>':'')+'</div><input type="file" id="bkf" accept=".json,application/json" hidden></div>';
  return h}
@@ -370,6 +374,7 @@ document.addEventListener('click',function(e){
    if(!KEYS){ensureKeys(apw);toast('Inihahanda ang proteksyon. Pindutin ulit ang 👁 pagkalipas ng ilang segundo.');var mm=$('mp');if(mm)mm.remove();return}
    if(!rg2.enc){miniPopup('<h3 style="margin-top:0">Walang mababasang password</h3><p>Hindi pa naipapadala ng device niya ang password. Mangyayari ito pagbukas niya ng website, o kapag ipinasok niya ang password sa susunod na pagpindot ng ✝ Yumao na.</p><div class="acts" style="justify-content:center"><button class="btn" data-a="mpx">Isara</button></div>');return}
    return decPw(apw,rg2.enc).then(function(pw){miniPopup('<div style="font-size:36px">🔑</div><h3 style="margin:6px 0">Password ni '+esc(rg2.name)+'</h3><p style="font-size:24px;font-weight:800;letter-spacing:1px;word-break:break-all">'+esc(pw)+'</p><p class="hint">Ibigay lang ito sa mismong may-ari.</p><div class="acts" style="justify-content:center"><button class="btn" data-a="mpx">Isara</button></div>')})}).catch(function(){toast('Hindi nabasa ang password. Subukan ulit.')})}
+ else if(a==='inst'){if(deferredInst){deferredInst.prompt();deferredInst.userChoice.then(function(){deferredInst=null;render()})}}
  else if(a==='mpb'){var mq=$('mp');if(mq)mq.remove();var bb=$('f_b');if(bb){bb.focus();if(bb.scrollIntoView)bb.scrollIntoView({block:'center'})}}
  else if(a==='mpx'){var mp=$('mp');if(mp)mp.remove()}
  else if(a==='mpset'){var mp2=$('mp');if(mp2)mp2.remove();if($('dlg').open)$('dlg').close();tab='set';render();window.scrollTo(0,0)}
@@ -482,6 +487,9 @@ function startVis(){if(visStarted||!window.__cloud||!isAdmin||!db)return;visStar
 function visBox(){var d0=new Date();d0.setHours(0,0,0,0);var t0=d0.getTime(),w0=Date.now()-7*864e5,cap=VIS.length>=200,
  td=VIS.filter(function(v){return v.ts>=t0}).length,wk=VIS.filter(function(v){return v.ts>=w0}).length;
  return '<div class="box"><h3>📈 Mga Bumisita</h3><p class="hint">Ngayong araw: <b>'+td+(cap?'+':'')+'</b> • Huling 7 araw: <b>'+wk+(cap?'+':'')+'</b><br>Isang bilang ang bawat pagbukas ng site (hindi hihigit sa isa kada 30 minuto sa bawat device).</p>'+(VIS.length?VIS.slice(0,30).map(function(v){return '<div class="df">'+(v.name?esc(v.name):'<span class="hint">Bisita</span>')+(v.admin?' 👑':'')+' <span class="hint">• '+esc(fmtDate(v.ts))+'</span></div>'}).join(''):'<div class="hint">Wala pang naka-record.</div>')+'</div>'}
+var deferredInst=null;
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredInst=e;if(tab==='set')render()});
+window.addEventListener('appinstalled',function(){deferredInst=null;toast('Na-install na ang app ✔');if(tab==='set')render()});
 function needReg(){return !isOwn&&!myReg()}
 function miniPopup(h){var o=$('mp');if(o)o.remove();o=document.createElement('div');o.id='mp';o.innerHTML='<div class="mpc">'+h+'</div>';o.addEventListener('click',function(e){if(e.target===o)o.remove()});($('dlg').open?$('dlg'):document.body).appendChild(o)}
 function regPopup(){miniPopup('<div style="font-size:40px">🔒</div><h3 style="margin:6px 0">Mag-register muna</h3><p>Para maiwasan ang aksidenteng pagpindot ng <b>Yumao na</b>, kailangan mong mag-register muna gamit ang pangalan mo sa Family Tree.</p><div class="acts" style="justify-content:center"><button class="btn" data-a="mpset">Mag-register</button><button class="btn g" data-a="mpx">Sige</button></div>')}
@@ -553,4 +561,5 @@ Promise.all([claude.use('db'),claude.use('user'),claude.use('assets')]).then(fun
 }).catch(function(){render()});
 render();
 })();
-</script></body></html>
+</script><script>if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})});</script>
+</body></html>
