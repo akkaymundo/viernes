@@ -216,12 +216,12 @@ function snapToArr(s){return s.docs.map(function(d){var o=Object.assign({},d.dat
 
 function render(){
  $('who').textContent=!db?'🔒 Hindi naka-sign in':isAdmin?'👑 ADMIN ✔':(canWrite===false?'👁 View lang':'👤 Miyembro');
- var t=[['dash','🏠 Home'],['tree','🌳 Family Tree'],['off','⭐ Mga Opisyal'],['hist','📖 Kasaysayan'],['pend','⏳ Approval'+(Q.length?' ('+Q.length+')':'')],['set','⚙ Settings']];
+ var t=[['dash','🏠 Home'],['tree','🌳 Family Tree'],['off','⭐ Mga Opisyal'],['hist','📖 Kasaysayan'],['pend','⏳ Approval'+(Q.length?' ('+Q.length+')':'')],['rel','🔗 Relasyon'],['set','⚙ Settings']];
  $('nav').innerHTML=t.map(function(x){return '<button data-t="'+x[0]+'" class="'+(tab===x[0]?'on':'')+'">'+x[1]+'</button>'}).join('');
  var h='';
  if(!db)h='<div class="err"><b>Kailangan mag-sign in sa Claude</b> para makita at mai-edit ang shared na family tree. Kung wala kang access, hilingin sa admin na i-invite ka sa Share.</div>';
  else if(!ready)h='<div class="empty">Naglo-load ng data…</div>';
- else h=tab==='dash'?dash():tab==='tree'?treeTab():tab==='off'?offs():tab==='hist'?hist():tab==='pend'?pend():setT();
+ else h=tab==='dash'?dash():tab==='tree'?treeTab():tab==='off'?offs():tab==='hist'?hist():tab==='pend'?pend():tab==='rel'?relT():setT();
  $('app').innerHTML=(db&&ready?(isAdmin?'':''):'')+(msg?'<div class="box">'+esc(msg)+'</div>':'')+h;
  if(tab==='tree'&&db&&ready)drawTree();
  showRes();
@@ -257,8 +257,56 @@ function card(p){
 function drawTree(){var r=P.filter(function(p){return !p.parent||!byId(p.parent)}).sort(function(a,b){return (a.ts||0)-(b.ts||0)});var h=r.map(card).join('');if(q&&!h)h='<div class="empty">Walang nakita para sa "'+esc(q)+'"</div>';$('tl').innerHTML=h||'<div class="empty">Wala pang miyembro.</div>';var c=$('sc');if(c)c.textContent=q?P.filter(mt).length+' nakita':''}
 function offs(){var l=P.filter(function(p){return p.off});return '<div class="box"><h3>⭐ Mga Opisyal ng Pamilya</h3>'+(l.length?l.map(function(p){return '<div class="person"><div class="pr"><div class="avc"><div class="av" style="background:#f59e0b;--c:#f59e0b">'+avh(p)+'</div>'+by(p)+'</div><div><div class="nm">'+hl(dn(p))+(p.nick?' <span class="nick">“'+hl(p.nick)+'”</span>':'')+(p.dead?' ✝':'')+'</div><span class="tag off">'+esc(p.off)+'</span></div></div></div>'}).join(''):'<div class="empty">Wala pa. I-Edit ang miyembro at ilagay ang Posisyon.</div>')+'</div>'}
 function hist(){return '<div class="box"><h3>📖 Kasaysayan ng Pamilya</h3>'+(N.length?N.sort(function(a,b){return (b.ts||0)-(a.ts||0)}).map(function(n){return '<div class="person"><div class="hint">'+esc(n.date||'')+'</div><div class="note" style="color:var(--tx);margin-top:2px">'+esc(n.text)+'</div>'+(isAdmin?'<div class="acts"><button class="btn r s" data-a="hdel" data-id="'+n.id+'">Delete</button></div>':'')+'</div>'}).join(''):'<div class="empty">Wala pang tala.</div>')+(canWrite!==false?'<label>Magdagdag ng tala</label><textarea id="hn" rows="4" placeholder="Isulat ang kasaysayan…"></textarea><div class="acts"><button class="btn" data-a="hadd">'+(isAdmin?'I-save':'Ipadala sa Admin')+'</button></div>':'')+'</div>'}
+var relA='',relB='';
+document.addEventListener('change',function(e){if(e.target.id==='ra'){relA=e.target.value;render()}else if(e.target.id==='rb'){relB=e.target.value;render()}});
+function anc(p){var a=[p.id],c=p,n=0;while(c&&c.parent&&byId(c.parent)&&n++<60){c=byId(c.parent);a.push(c.id)}return a}
+function termDesc(n){if(n===1)return 'anak';if(n===2)return 'apo';if(n===3)return 'apo sa tuhod';return 'inapo ('+n+' henerasyon sa ibaba)'}
+function termAnc(n){if(n===1)return 'magulang';if(n===2)return 'lolo/lola';if(n===3)return 'lolo/lola sa tuhod';return 'ninuno ('+n+' henerasyon sa itaas)'}
+function ordTuhod(d){var o=['unang','ikalawang','ikatlong','ikaapat','ikalimang','ikaanim','ikapitong','ikawalong'];return (o[d-1]||(d+'.'))+' tuhod'}
+function relSentence(x,y){
+ if(x.id===y.id)return 'Pareho lang ang napili.';
+ var nx=dn(x),ny=dn(y);
+ var sp=(x.spouses||[]).some(function(s){return String(s.n||'').trim().toLowerCase()===ny.trim().toLowerCase()})||(y.spouses||[]).some(function(s){return String(s.n||'').trim().toLowerCase()===nx.trim().toLowerCase()});
+ var ax=anc(x),ay=anc(y),a=-1,b=-1,c=null;
+ for(var i=0;i<ax.length&&c===null;i++){var j=ay.indexOf(ax[i]);if(j>=0){a=i;b=j;c=ax[i]}}
+ if(c===null)return sp?nx+' at '+ny+' ay mag-asawa.':'Walang nakikitang koneksyon nina '+nx+' at '+ny+' sa tree.';
+ var s;
+ if(b===0)s=nx+' ay '+termDesc(a)+' ni '+ny+'.';
+ else if(a===0)s=nx+' ay '+termAnc(b)+' ni '+ny+'.';
+ else if(a===1&&b===1)s=nx+' at '+ny+' ay magkapatid.';
+ else if(a===1)s=nx+' ay '+(b===2?'tiyo/tiya':'dakilang tiyo/tiya')+' ni '+ny+'.';
+ else if(b===1)s=nx+' ay '+(a===2?'pamangkin':'dakilang pamangkin')+' ni '+ny+'.';
+ else{var deg=Math.min(a,b)-1,rem=Math.abs(a-b);s=nx+' at '+ny+' ay magpinsan sa '+ordTuhod(deg)+(rem?' (may '+rem+' henerasyon ang pagitan nila)':'')+'.'}
+ if(sp)s+=' Mag-asawa rin sila.';
+ return s;
+}
+var qa='',qb='';
+function optsFor(sel,q){q=String(q||'').trim().toLowerCase();var L=P.slice().sort(function(a,b){return dn(a).localeCompare(dn(b))}).filter(function(p){return !q||dn(p).toLowerCase().indexOf(q)>=0||String(p.nick||'').toLowerCase().indexOf(q)>=0});
+ var o='<option value="">— Pumili —</option>'+L.map(function(p){return '<option value="'+esc(p.id)+'"'+(p.id===sel?' selected':'')+'>'+esc(dn(p))+(p.born?' ('+esc(p.born)+')':'')+'</option>'}).join('');
+ return {html:o,n:L.length};}
+function relT(){
+ var x=byId(relA),y=byId(relB),r=(x&&y)?'<div class="box" style="font-size:16px;line-height:1.5"><b>📌 '+esc(relSentence(x,y))+'</b></div>':'';
+ var A=optsFor(relA,qa),B=optsFor(relB,qb);
+ return '<div class="box"><h3>🔗 Relasyon ng Magkakamag-anak</h3><p class="hint">I-type ang unang letra o pangalan para mabilis mahanap, tapos pumili sa listahan.</p>'+
+  '<label>Unang tao</label><input id="raq" placeholder="🔎 I-type ang pangalan" autocomplete="off" value="'+esc(qa)+'"><select id="ra" size="5" style="margin-top:6px">'+A.html+'</select><div class="hint">Nakita: '+A.n+'</div>'+
+  '<label>Ikalawang tao</label><input id="rbq" placeholder="🔎 I-type ang pangalan" autocomplete="off" value="'+esc(qb)+'"><select id="rb" size="5" style="margin-top:6px">'+B.html+'</select><div class="hint">Nakita: '+B.n+'</div>'+
+  '</div>'+r;
+}
+document.addEventListener('input',function(e){var t=e.target;
+ if(t.id==='raq'){qa=t.value;var s=document.getElementById('ra');if(s){var o=optsFor(relA,qa);s.innerHTML=o.html}}
+ else if(t.id==='rbq'){qb=t.value;var s2=document.getElementById('rb');if(s2){var o2=optsFor(relB,qb);s2.innerHTML=o2.html}}
+});
+function bkDump(){
+ Promise.resolve(window.__amv.dump()).then(function(s){
+  var u=URL.createObjectURL(new Blob([s],{type:'application/json'}));
+  var a=document.createElement('a');a.href=u;a.download='akkaymundo-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(u);a.remove()},4000);
+ }).catch(function(e){alert('Hindi na-backup: '+((e&&e.message)||e))})
+}
 function setT(){
  var h='<div class="box"><h3>⚙ Settings</h3><div class="adm'+(isAdmin?'':' mem')+'" style="margin-bottom:0"><span>'+(isAdmin?'👑 NAKA-ADMIN KA':'👤 Miyembro ka')+'</span></div></div>';
+ h+='<div class="box"><h3>💾 I-backup ang data</h3><p class="hint">Mada-download ang kopya ng buong family tree bilang file (read-only, hindi nito binabago ang data).</p><button class="btn ok" data-a="bk">💾 I-download ang backup</button></div>';
  if(!isAdmin){var mr=myReg();
   if(mr){h+='<div class="box"><b>✅ Nakarehistro ka bilang '+esc(mr.name)+'</b><div class="acts" style="margin-top:8px"><button class="btn g s" data-a="rgdel">Alisin ang registration ko</button></div></div>';h+='<div class="box"><h3>🔑 Login bilang Admin</h3><label>Username</label><input data-nc="1" id="au" autocomplete="username"><label>Password</label><input id="ap" type="password" autocomplete="current-password"><div class="acts" style="margin-top:12px"><button class="btn" data-a="lgo">Login</button></div></div>';}
   else h+='<div class="box"><h3>📝 Mag-register muna</h3><p class="hint">Para maging admin, mag-register muna.</p><label>Ilagay ang complete name (gaya ng nasa Family Tree)</label><input id="rg_n" autocomplete="off"><label>Gumawa ng sarili mong password (4+ letra o numero)</label><input id="rg_p" type="password" maxlength="40" autocomplete="new-password"><label>Ulitin ang password</label><input id="rg_p2" type="password" maxlength="40" autocomplete="new-password"><p class="hint">Pangprotekta ito sa phone mo: hihingin ito tuwing pipindutin mo ang ✝ Yumao na, para hindi basta magamit ng nanghiram ng phone mo. Kapag nakalimutan mo, magtanong sa admin.</p><div class="acts"><button class="btn" data-a="rgsub">Mag-register</button></div></div>';}
@@ -333,7 +381,8 @@ document.addEventListener('click',function(e){
  var t=e.target.closest('[data-a],[data-t]');if(!t)return;msg='';
  if(t.dataset.t){tab=t.dataset.t;if(tab==='tree')col={};render();return}
  var a=t.dataset.a,id=t.dataset.id;
- if(a==='gt'){tab='tree';col={};render()}
+ if(a==='bk'){bkDump()}
+if(a==='gt'){tab='tree';col={};render()}
  else if(a==='add'){var pa=byId(id);if(LOCK_ADD_IF_DEAD&&pa&&pa.dead){toast('Yumao na siya, hindi na makakapagdagdag ng anak.');return}form('add',id);focusName()}
  else if(a==='addsib'){form('addroot',id);focusName()}else if(a==='edit'){form('edit',id);focusName()}
  else if(a==='cl')$('dlg').close();
